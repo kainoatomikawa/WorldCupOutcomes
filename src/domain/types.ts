@@ -39,6 +39,7 @@ export type Stage =
   | 'round16'
   | 'quarter'
   | 'semi'
+  | 'thirdPlacePlayoff'
   | 'final';
 
 /** A computed standings row for one team within its group. */

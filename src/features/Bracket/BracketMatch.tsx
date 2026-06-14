@@ -11,6 +11,7 @@ const STAGE_SHORT: Record<string, string> = {
   round16: 'R16',
   quarter: 'QF',
   semi:    'SF',
+  thirdPlacePlayoff: '3rd Place',
   final:   'Final',
 };
 

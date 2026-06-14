@@ -1,21 +1,30 @@
 import { describe, it, expect } from 'vitest';
-import { BRACKET_TEMPLATE, WINNER_DESTINATION } from './bracketTemplate';
+import { BRACKET_TEMPLATE, WINNER_DESTINATION, LOSER_DESTINATION } from './bracketTemplate';
 import { THIRD_PLACE_MATCH_IDS } from './assignmentTable';
 
 const R32 = BRACKET_TEMPLATE.filter((m) => m.stage === 'round32');
 const R16 = BRACKET_TEMPLATE.filter((m) => m.stage === 'round16');
 const QF  = BRACKET_TEMPLATE.filter((m) => m.stage === 'quarter');
 const SF  = BRACKET_TEMPLATE.filter((m) => m.stage === 'semi');
+const TP  = BRACKET_TEMPLATE.filter((m) => m.stage === 'thirdPlacePlayoff');
 const F   = BRACKET_TEMPLATE.filter((m) => m.stage === 'final');
 
 describe('BRACKET_TEMPLATE structure', () => {
-  it('has 31 matches total (16+8+4+2+1)', () => {
-    expect(BRACKET_TEMPLATE).toHaveLength(31);
+  it('has 32 matches total (16+8+4+2+1+1)', () => {
+    expect(BRACKET_TEMPLATE).toHaveLength(32);
     expect(R32).toHaveLength(16);
     expect(R16).toHaveLength(8);
     expect(QF).toHaveLength(4);
     expect(SF).toHaveLength(2);
+    expect(TP).toHaveLength(1);
     expect(F).toHaveLength(1);
+  });
+
+  it('third-place playoff (103) is contested by the two semi-final losers', () => {
+    const byId = Object.fromEntries(BRACKET_TEMPLATE.map((m) => [m.matchId, m]));
+    expect(byId[103].stage).toBe('thirdPlacePlayoff');
+    expect(byId[103].home).toEqual({ kind: 'matchLoser', matchId: 101 });
+    expect(byId[103].away).toEqual({ kind: 'matchLoser', matchId: 102 });
   });
 
   it('covers matches 73–88 in R32 with no gaps', () => {
@@ -66,21 +75,22 @@ describe('BRACKET_TEMPLATE structure', () => {
 });
 
 describe('WINNER_DESTINATION', () => {
-  it('has an entry for all 31 matches', () => {
+  it('has an entry for all 32 matches', () => {
     const allIds = BRACKET_TEMPLATE.map((m) => m.matchId);
     for (const id of allIds) {
       expect(id in WINNER_DESTINATION, `${id} missing from WINNER_DESTINATION`).toBe(true);
     }
   });
 
-  it('final (104) maps to null', () => {
+  it('final (104) and third-place playoff (103) map to null', () => {
     expect(WINNER_DESTINATION[104]).toBeNull();
+    expect(WINNER_DESTINATION[103]).toBeNull();
   });
 
-  it('every non-final match maps to a valid next matchId', () => {
+  it('every other match maps to a valid next matchId', () => {
     const allIds = new Set(BRACKET_TEMPLATE.map((m) => m.matchId));
     for (const [id, dest] of Object.entries(WINNER_DESTINATION)) {
-      if (Number(id) === 104) continue;
+      if (Number(id) === 104 || Number(id) === 103) continue;
       expect(dest).not.toBeNull();
       expect(allIds.has(dest!.matchId)).toBe(true);
     }
@@ -92,5 +102,14 @@ describe('WINNER_DESTINATION', () => {
     expect(WINNER_DESTINATION[77]).toEqual({ matchId: 89, side: 'away' });
     expect(WINNER_DESTINATION[73]).toEqual({ matchId: 90, side: 'home' });
     expect(WINNER_DESTINATION[75]).toEqual({ matchId: 90, side: 'away' });
+  });
+});
+
+describe('LOSER_DESTINATION', () => {
+  it('only the two semi-finals feed losers, into the third-place playoff', () => {
+    expect(LOSER_DESTINATION).toEqual({
+      101: { matchId: 103, side: 'home' },
+      102: { matchId: 103, side: 'away' },
+    });
   });
 });

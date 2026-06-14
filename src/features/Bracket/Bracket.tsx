@@ -1,7 +1,7 @@
 // Knockout bracket: R32 → R16 → QF → SF → Final.
 // Column-per-round layout. Click a team to pick the winner; click again to undo.
 // The bracket re-seeds automatically when group orders or third-place rankings change.
-import { getChampion } from '../../domain/knockout';
+import { getChampion, getRunnerUp, getThirdPlace } from '../../domain/knockout';
 import { useBracketData } from './useBracketData';
 import { BracketMatch } from './BracketMatch';
 
@@ -25,6 +25,11 @@ export function Bracket() {
   const { bracket, teams, setPick, clearPick } = useBracketData();
   const champion = getChampion(bracket);
   const champTeam = champion ? teams[champion] : undefined;
+  const runnerUp = getRunnerUp(bracket);
+  const runnerUpTeam = runnerUp ? teams[runnerUp] : undefined;
+  const thirdPlace = getThirdPlace(bracket);
+  const thirdTeam = thirdPlace ? teams[thirdPlace] : undefined;
+  const thirdSlot = bracket[103];
 
   function handlePick(matchId: number, teamId: string) {
     // Toggle: clicking the current winner removes the pick.
@@ -50,6 +55,26 @@ export function Bracket() {
           <span className="champion-banner__flag">{champTeam.flag ?? '🏳️'}</span>
           <span className="champion-banner__name">{champTeam.name}</span>
           <span className="champion-banner__label">2026 World Cup Champion</span>
+        </div>
+      )}
+
+      {/* Runner-up banner */}
+      {runnerUpTeam && (
+        <div className="champion-banner champion-banner--silver">
+          <span className="champion-banner__trophy">🥈</span>
+          <span className="champion-banner__flag">{runnerUpTeam.flag ?? '🏳️'}</span>
+          <span className="champion-banner__name">{runnerUpTeam.name}</span>
+          <span className="champion-banner__label">Runner-Up</span>
+        </div>
+      )}
+
+      {/* Third-place banner */}
+      {thirdTeam && (
+        <div className="champion-banner champion-banner--bronze">
+          <span className="champion-banner__trophy">🥉</span>
+          <span className="champion-banner__flag">{thirdTeam.flag ?? '🏳️'}</span>
+          <span className="champion-banner__name">{thirdTeam.name}</span>
+          <span className="champion-banner__label">Third Place</span>
         </div>
       )}
 
@@ -80,6 +105,23 @@ export function Bracket() {
                     );
                   })}
                 </div>
+
+                {/* Third-place playoff sits just beneath the (vertically
+                    centred) Final card — pulled up from the bottom of the
+                    full-height column via a negative margin. */}
+                {round.label === 'Final' && thirdSlot && (
+                  <div
+                    className="third-place-playoff"
+                    style={{ marginTop: -(TOTAL_H / 2) + 80 }}
+                  >
+                    <div className="round-head">Third-Place Playoff</div>
+                    <BracketMatch
+                      slot={thirdSlot}
+                      teams={teams}
+                      onPick={(teamId) => handlePick(103, teamId)}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

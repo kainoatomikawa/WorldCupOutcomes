@@ -574,6 +574,41 @@
   font-weight: 600;
 }
 
+.champion-banner--silver {
+  background: linear-gradient(120deg, rgba(160, 168, 178, 0.18), rgba(160, 168, 178, 0.32));
+  border-color: #a7b0bb;
+  box-shadow: 0 8px 24px rgba(160, 168, 178, 0.22);
+  margin-left: 12px;
+}
+
+.champion-banner--silver .champion-banner__label {
+  color: #545b66;
+}
+
+.champion-banner--bronze {
+  background: linear-gradient(120deg, rgba(176, 141, 87, 0.18), rgba(176, 141, 87, 0.3));
+  border-color: #b08d57;
+  box-shadow: 0 8px 24px rgba(176, 141, 87, 0.22);
+  margin-left: 12px;
+}
+
+.champion-banner--bronze .champion-banner__label {
+  color: #6b5326;
+}
+
+/* ---------- Third-place playoff ---------- */
+.third-place-playoff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.third-place-playoff .round-head {
+  background: linear-gradient(120deg, #b08d57, #c8a877);
+  box-shadow: 0 4px 14px rgba(176, 141, 87, 0.3);
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 640px) {
   .app-shell {

@@ -12,9 +12,9 @@ const ORDER: Record<GroupId, string[]> = Object.fromEntries(
 const QUAL_GROUPS: GroupId[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 describe('seedRound32', () => {
-  it('produces exactly 31 slots', () => {
+  it('produces exactly 32 slots', () => {
     const b = seedRound32(ORDER, QUAL_GROUPS);
-    expect(Object.keys(b)).toHaveLength(31);
+    expect(Object.keys(b)).toHaveLength(32);
   });
 
   it('match 73: RU-A vs RU-B', () => {
@@ -52,7 +52,7 @@ describe('seedRound32', () => {
 
   it('R16+ slots start with no participants', () => {
     const b = seedRound32(ORDER, QUAL_GROUPS);
-    const laterIds = [89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 104];
+    const laterIds = [89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104];
     for (const id of laterIds) {
       expect(b[id].homeId).toBeUndefined();
       expect(b[id].awayId).toBeUndefined();

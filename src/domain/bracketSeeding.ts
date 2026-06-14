@@ -17,6 +17,7 @@ function resolveSource(
       return g !== undefined ? groupOrder[g]?.[2] : undefined;
     }
     case 'matchWinner': return undefined; // filled in by computeBracket
+    case 'matchLoser':  return undefined; // filled in by computeBracket
   }
 }
 

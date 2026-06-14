@@ -1,6 +1,7 @@
 // Fixed bracket structure for the 2026 FIFA World Cup knockout stage.
 // Encodes exactly which group positions (winner, runner-up, third-place) or
-// prior match winners fill each of the 31 slots (73–104, no match 103).
+// prior match winners/losers fill each of the 32 slots (73–104). Match 103 is
+// the third-place playoff, contested by the two semi-final losers.
 //
 // Source: en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage
 import type { GroupId, Stage } from '../domain/types';
@@ -9,7 +10,8 @@ export type ParticipantSource =
   | { kind: 'winner'; group: GroupId }
   | { kind: 'runnerUp'; group: GroupId }
   | { kind: 'thirdPlace'; matchId: number }   // group resolved via assignThirdPlace
-  | { kind: 'matchWinner'; matchId: number };
+  | { kind: 'matchWinner'; matchId: number }
+  | { kind: 'matchLoser'; matchId: number };
 
 export interface BracketMatchTemplate {
   matchId: number;
@@ -53,6 +55,8 @@ export const BRACKET_TEMPLATE: BracketMatchTemplate[] = [
   // Semi-finals
   { matchId: 101, stage: 'semi', home: { kind: 'matchWinner', matchId: 97  }, away: { kind: 'matchWinner', matchId: 98  } },
   { matchId: 102, stage: 'semi', home: { kind: 'matchWinner', matchId: 99  }, away: { kind: 'matchWinner', matchId: 100 } },
+  // Third-place playoff — the two semi-final losers.
+  { matchId: 103, stage: 'thirdPlacePlayoff', home: { kind: 'matchLoser', matchId: 101 }, away: { kind: 'matchLoser', matchId: 102 } },
   // Final
   { matchId: 104, stage: 'final', home: { kind: 'matchWinner', matchId: 101 }, away: { kind: 'matchWinner', matchId: 102 } },
 ];
@@ -60,7 +64,8 @@ export const BRACKET_TEMPLATE: BracketMatchTemplate[] = [
 /**
  * For each match, where does its winner feed as a participant in the next round?
  * Derived from BRACKET_TEMPLATE — every matchWinner source maps back to here.
- * The final (104) maps to null (champion).
+ * The final (104) and the third-place playoff (103) map to null — their winners
+ * feed no further match (champion / bronze).
  */
 export const WINNER_DESTINATION: Record<number, { matchId: number; side: 'home' | 'away' } | null> =
   Object.fromEntries([
@@ -70,5 +75,21 @@ export const WINNER_DESTINATION: Record<number, { matchId: number; side: 'home' 
       if (m.away.kind === 'matchWinner') entries.push([m.away.matchId, { matchId: m.matchId, side: 'away' }]);
       return entries;
     }),
+    [103, null] as [number, null],
     [104, null] as [number, null],
   ]);
+
+/**
+ * For each match, where does its loser feed? Mirrors WINNER_DESTINATION but for
+ * matchLoser sources — currently only the two semi-finals (101, 102), whose
+ * losers contest the third-place playoff (103).
+ */
+export const LOSER_DESTINATION: Record<number, { matchId: number; side: 'home' | 'away' }> =
+  Object.fromEntries(
+    BRACKET_TEMPLATE.flatMap((m): [number, { matchId: number; side: 'home' | 'away' }][] => {
+      const entries: [number, { matchId: number; side: 'home' | 'away' }][] = [];
+      if (m.home.kind === 'matchLoser') entries.push([m.home.matchId, { matchId: m.matchId, side: 'home' }]);
+      if (m.away.kind === 'matchLoser') entries.push([m.away.matchId, { matchId: m.matchId, side: 'away' }]);
+      return entries;
+    }),
+  );

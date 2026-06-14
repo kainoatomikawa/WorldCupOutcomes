@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeBracket, isBracketComplete, getChampion } from './knockout';
+import { computeBracket, isBracketComplete, getChampion, getRunnerUp, getThirdPlace } from './knockout';
 import { GROUP_IDS } from './types';
 import type { GroupId } from './types';
 
@@ -73,5 +73,62 @@ describe('computeBracket', () => {
   it('getChampion returns undefined when final not decided', () => {
     const b = computeBracket(ORDER, QUAL_GROUPS, {});
     expect(getChampion(b)).toBeUndefined();
+  });
+
+  it('getRunnerUp returns undefined when final not decided', () => {
+    const b = computeBracket(ORDER, QUAL_GROUPS, {});
+    expect(getRunnerUp(b)).toBeUndefined();
+  });
+});
+
+describe('third-place playoff (103)', () => {
+  // Fill every match by always advancing the home participant. Ascending order
+  // guarantees each match's participants are resolved before we pick it.
+  function completeAll(): Record<number, string> {
+    const picks: Record<number, string> = {};
+    const ids = Object.keys(computeBracket(ORDER, QUAL_GROUPS, picks))
+      .map(Number)
+      .sort((a, b) => a - b);
+    for (const id of ids) {
+      const slot = computeBracket(ORDER, QUAL_GROUPS, picks)[id];
+      if (slot.homeId) picks[id] = slot.homeId;
+    }
+    return picks;
+  }
+
+  it('is TBD until the semi-finals have winners', () => {
+    const b = computeBracket(ORDER, QUAL_GROUPS, {});
+    expect(b[103].homeId).toBeUndefined();
+    expect(b[103].awayId).toBeUndefined();
+  });
+
+  it('is contested by the two semi-final losers', () => {
+    const picks = completeAll();
+    const b = computeBracket(ORDER, QUAL_GROUPS, picks);
+    const loser101 = b[101].winnerId === b[101].homeId ? b[101].awayId : b[101].homeId;
+    const loser102 = b[102].winnerId === b[102].homeId ? b[102].awayId : b[102].homeId;
+    expect(b[103].homeId).toBe(loser101);
+    expect(b[103].awayId).toBe(loser102);
+  });
+
+  it('changing a semi-final winner reroutes the loser into 103', () => {
+    const picks = completeAll();
+    const base = computeBracket(ORDER, QUAL_GROUPS, picks);
+    // Flip semi-final 101 to its other participant; the loser (hence 103 home) flips too.
+    const flipped = { ...picks, 101: base[101].awayId! };
+    const b = computeBracket(ORDER, QUAL_GROUPS, flipped);
+    expect(b[101].winnerId).toBe(base[101].awayId);
+    expect(b[103].homeId).toBe(base[101].homeId); // previous winner is now the loser
+  });
+
+  it('completing all 32 matches sets isBracketComplete and a third-place team', () => {
+    const picks = completeAll();
+    const b = computeBracket(ORDER, QUAL_GROUPS, picks);
+    expect(isBracketComplete(b)).toBe(true);
+    expect(getChampion(b)).toBe(b[104].winnerId);
+    const finalLoser = b[104].winnerId === b[104].homeId ? b[104].awayId : b[104].homeId;
+    expect(getRunnerUp(b)).toBe(finalLoser);
+    expect(getThirdPlace(b)).toBe(b[103].winnerId);
+    expect(getThirdPlace(b)).toBeDefined();
   });
 });
