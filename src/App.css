@@ -31,6 +31,14 @@
   font-size: 14px;
 }
 
+.live-status {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.live-status--loading { color: var(--muted); }
+.live-status--live    { color: var(--green); }
+.live-status--offline { color: var(--muted); }
+
 .screen-intro {
   color: var(--muted);
   font-size: 14px;

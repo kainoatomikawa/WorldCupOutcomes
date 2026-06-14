@@ -8,6 +8,8 @@ import { GROUP_IDS } from '../domain/types';
 interface TournamentStore extends TournamentState {
   // --- lifecycle ---
   initialize: (teams: Team[], matches: Match[]) => void;
+  /** Replace the matches array with fresh live data (does not reset teams or picks). */
+  setMatches: (matches: Match[]) => void;
 
   // --- group stage ---
   initializeGroupOrders: (seedByGroup: Record<GroupId, string[]>) => void;
@@ -43,6 +45,8 @@ export const useTournamentStore = create<TournamentStore>()(
           teams: Object.fromEntries(teams.map((t) => [t.id, t])),
           matches,
         }),
+
+      setMatches: (matches) => set({ matches }),
 
       initializeGroupOrders: (seedByGroup) =>
         set((s) => {
