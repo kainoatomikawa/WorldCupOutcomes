@@ -25,6 +25,7 @@ export function ThirdPlaceRow({ rank, entry, team, advancing, locked }: Props) {
   const className = [
     'tp-row',
     advancing ? 'is-advancing' : 'is-out',
+    locked ? 'is-locked' : '',
     isDragging ? 'is-dragging' : '',
   ].filter(Boolean).join(' ');
 

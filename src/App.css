@@ -171,8 +171,17 @@
   border-bottom: 1px solid var(--border);
   user-select: none;
   cursor: grab;
+  /* Opt out of native touch-scroll so dnd-kit's pointer sensor can drive the
+     drag on touchscreens; re-enabled below for non-draggable rows. */
+  touch-action: none;
   /* NB: do not transition `transform` — dnd-kit owns it. */
   transition: background 0.15s var(--ease);
+}
+
+/* Locked/static rows aren't draggable — let a finger scroll the page on them. */
+.team-row.is-locked,
+.team-row.is-static {
+  touch-action: auto;
 }
 
 .team-row:last-child {
@@ -273,7 +282,15 @@
   border-left: 4px solid transparent;
   user-select: none;
   cursor: grab;
+  /* See .team-row: opt out of native touch-scroll for the drag sensor. */
+  touch-action: none;
   transition: background 0.15s var(--ease);
+}
+
+/* When the ranking is locked the rows aren't draggable — allow scrolling. */
+.tp-row.is-locked {
+  touch-action: auto;
+  cursor: default;
 }
 
 .tp-row:hover {

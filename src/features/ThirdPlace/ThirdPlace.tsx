@@ -24,7 +24,12 @@ export function ThirdPlace() {
   const thirdPlaceRanking = useTournamentStore((s) => s.thirdPlaceRanking);
   const { rankedEntries, allGroupsComplete } = useThirdPlaceData();
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  // See GroupCard: press-and-hold so a quick swipe scrolls instead of dragging.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
+  );
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;

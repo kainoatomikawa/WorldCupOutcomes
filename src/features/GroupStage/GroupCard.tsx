@@ -40,7 +40,14 @@ export function GroupCard({ groupId, teams, groupData }: Props) {
     .map((id) => teams.find((t) => t.id === id))
     .filter(Boolean) as Team[];
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  // A short press-and-hold (rather than an immediate grab) so a quick finger
+  // swipe still scrolls the page on touch devices; `tolerance` cancels the
+  // hold if the finger moves first, i.e. the user was scrolling, not dragging.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
+  );
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
