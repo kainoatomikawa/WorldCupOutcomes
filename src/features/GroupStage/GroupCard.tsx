@@ -35,11 +35,11 @@ export function GroupCard({ groupId, teams, groupData }: Props) {
 
   const { standings, possibilities, complete } = groupData;
 
-  // Once any match has been played, standings order (points → h2h → GD) is
-  // authoritative. Only use the user's drag order before any results exist.
-  const hasResults = standings.some((s) => s.played > 0);
+  // Complete groups are locked to final standings order.
+  // Incomplete groups display groupOrder (seeded to standings by GroupStage.tsx,
+  // then updated by user drags to express predictions).
   const orderedTeams = (
-    hasResults
+    complete
       ? standings.map((s) => teams.find((t) => t.id === s.teamId))
       : groupOrder.map((id) => teams.find((t) => t.id === id))
   ).filter(Boolean) as Team[];
