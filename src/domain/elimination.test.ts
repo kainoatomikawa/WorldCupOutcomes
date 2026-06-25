@@ -90,6 +90,26 @@ describe('computePlacementPossibilities', () => {
     expect(p.t4).toMatchObject({ canFinish1st: false, canFinish2nd: false, canFinish3rd: false, locked: true });
   });
 
+  it('locks a team out of 1st when h2h against its only rival at that points level is already settled', () => {
+    // t1 beat t2 head-to-head. t3 vs t4 is already settled (draw).
+    // Only t1 vs t4 and t2 vs t4 remain.
+    //
+    // The only scenario where t1 and t2 tie on points is t1 loses + t2 wins
+    // (both end at 6 pts). No third team can reach 6 pts in that case, so the
+    // tie is always two-way — and t1 wins it via h2h. t2 can never finish 1st.
+    const matches = [
+      played('t1', 't2', 1, 0), // h2h settled: t1 beats t2
+      played('t1', 't3', 1, 0),
+      played('t2', 't3', 1, 0),
+      played('t3', 't4', 0, 0), // t3 vs t4 settled; caps t4 at ≤ 4 pts max
+      unplayed('t1', 't4'),
+      unplayed('t2', 't4'),
+    ];
+    const p = possibilitiesFor(matches);
+    expect(p['t2'].canFinish1st).toBe(false);
+    expect(p['t1'].canFinish1st).toBe(true);
+  });
+
   it('marks a team that can no longer reach 3rd as eliminated, without locking the group', () => {
     // t4 has played all 3 games and lost them all (0 pts, no matches left).
     // t1, t2, t3 are all already on >= 3 pts with games still to play.

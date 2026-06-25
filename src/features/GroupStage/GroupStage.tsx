@@ -4,6 +4,7 @@ import { useTournamentStore } from '../../store/tournamentStore';
 import { GroupCard } from './GroupCard';
 import { useGroupData } from './useGroupData';
 import { computeAllStandings } from '../../domain/standings';
+import { isGroupComplete } from '../../domain/elimination';
 
 export function GroupStage() {
   const teams = useTournamentStore((s) => s.teams);
@@ -28,10 +29,12 @@ export function GroupStage() {
       const potOrder = teamList.filter((t) => t.groupId === g).map((t) => t.id);
       const current = groupOrder[g] ?? [];
 
-      // Skip groups the user has already manually reordered.
+      // Skip groups the user has already manually reordered — unless the group
+      // is complete, in which case standings order is authoritative.
+      const complete = isGroupComplete(g, matches);
       const untouched =
         current.length === 0 || potOrder.every((id, i) => id === current[i]);
-      if (!untouched) continue;
+      if (!untouched && !complete) continue;
 
       const gs = standingsMap[g] ?? [];
       const idealOrder = gs.some((s) => s.played > 0)
