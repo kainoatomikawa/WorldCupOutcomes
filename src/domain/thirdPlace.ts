@@ -15,6 +15,19 @@ export interface ThirdPlaceEntry {
   points: number;
   goalDifference: number;
   goalsFor: number;
+  played: number;
+}
+
+export interface ThirdPlacePossibility {
+  teamId: string;
+  minRank: number;
+  maxRank: number;
+  locked: boolean;
+}
+
+export interface IllegalThirdPlacement {
+  teamId: string;
+  attemptedRank: number;
 }
 
 /**
@@ -38,6 +51,7 @@ export function buildThirdPlaceEntries(
       points: standing?.points ?? 0,
       goalDifference: standing?.goalDifference ?? 0,
       goalsFor: standing?.goalsFor ?? 0,
+      played: standing?.played ?? 0,
     });
   }
   return entries;
@@ -65,4 +79,67 @@ export function qualifyingThirdPlace(ranked: ThirdPlaceEntry[]): string[] {
 /** The group ids of the 8 qualifying third-place teams (feeds bracket seeding). */
 export function qualifyingThirdPlaceGroups(ranked: ThirdPlaceEntry[]): GroupId[] {
   return ranked.slice(0, 8).map((e) => e.groupId);
+}
+
+/**
+ * Returns true if team A can possibly finish above team B given remaining matches.
+ *
+ * Each team plays exactly 3 group matches (remaining = 3 - played).
+ * - Definitive NO: A's best possible points (current + 3×remaining) < B's current points.
+ * - Both complete (played === 3): stats are frozen — apply exact FIFA tiebreaker.
+ * - Otherwise: points ranges overlap and GD/goals are unbounded → either order possible.
+ */
+function canRankAbove(a: ThirdPlaceEntry, b: ThirdPlaceEntry): boolean {
+  const aMax = a.points + 3 * (3 - a.played);
+  if (aMax < b.points) return false;
+
+  if (a.played === 3 && b.played === 3) {
+    if (a.points !== b.points) return a.points > b.points;
+    if (a.goalDifference !== b.goalDifference) return a.goalDifference > b.goalDifference;
+    if (a.goalsFor !== b.goalsFor) return a.goalsFor > b.goalsFor;
+    return a.teamId < b.teamId;
+  }
+
+  return true;
+}
+
+/**
+ * For each third-place team, compute the tightest rank window [minRank, maxRank]
+ * given the current match results and remaining fixtures.
+ */
+export function computeThirdPlacePossibilities(
+  entries: ThirdPlaceEntry[],
+): ThirdPlacePossibility[] {
+  const n = entries.length;
+  return entries.map((team) => {
+    const mustAbove = entries.filter(
+      (other) => other.teamId !== team.teamId && !canRankAbove(team, other),
+    ).length;
+    const mustBelow = entries.filter(
+      (other) => other.teamId !== team.teamId && !canRankAbove(other, team),
+    ).length;
+    const minRank = mustAbove + 1;
+    const maxRank = n - mustBelow;
+    return { teamId: team.teamId, minRank, maxRank, locked: minRank === maxRank };
+  });
+}
+
+/**
+ * Check whether a proposed third-place ordering violates any constraint.
+ * Returns the first team placed outside its reachable rank window, or null if valid.
+ */
+export function firstIllegalThirdPlacement(
+  orderedIds: string[],
+  possibilities: ThirdPlacePossibility[],
+): IllegalThirdPlacement | null {
+  const byId = Object.fromEntries(possibilities.map((p) => [p.teamId, p]));
+  for (let i = 0; i < orderedIds.length; i++) {
+    const p = byId[orderedIds[i]];
+    if (!p) continue;
+    const rank = i + 1;
+    if (rank < p.minRank || rank > p.maxRank) {
+      return { teamId: orderedIds[i], attemptedRank: rank };
+    }
+  }
+  return null;
 }

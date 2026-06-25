@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -15,6 +16,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { useThirdPlaceData } from './useThirdPlaceData';
 import { ThirdPlaceRow } from './ThirdPlaceRow';
 import { useTournamentStore } from '../../store/tournamentStore';
+import { firstIllegalThirdPlacement } from '../../domain/thirdPlace';
 
 const QUALIFYING_COUNT = 8;
 
@@ -22,7 +24,8 @@ export function ThirdPlace() {
   const teams = useTournamentStore((s) => s.teams);
   const rankThirdPlace = useTournamentStore((s) => s.rankThirdPlace);
   const thirdPlaceRanking = useTournamentStore((s) => s.thirdPlaceRanking);
-  const { rankedEntries, allGroupsComplete } = useThirdPlaceData();
+  const { rankedEntries, allGroupsComplete, possibilities } = useThirdPlaceData();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // See GroupCard: press-and-hold so a quick swipe scrolls instead of dragging.
   const sensors = useSensors(
@@ -36,8 +39,19 @@ export function ThirdPlace() {
     if (!over || active.id === over.id) return;
     const oldIndex = thirdPlaceRanking.indexOf(active.id as string);
     const newIndex = thirdPlaceRanking.indexOf(over.id as string);
-    rankThirdPlace(arrayMove(thirdPlaceRanking, oldIndex, newIndex));
+    const newOrder = arrayMove(thirdPlaceRanking, oldIndex, newIndex);
+
+    const illegal = firstIllegalThirdPlacement(newOrder, possibilities);
+    if (illegal) {
+      const teamName = teams[illegal.teamId]?.name ?? illegal.teamId;
+      setErrorMsg(`${teamName} cannot be ranked ${ordinal(illegal.attemptedRank)}.`);
+      return;
+    }
+    setErrorMsg(null);
+    rankThirdPlace(newOrder);
   }
+
+  const possibilityById = Object.fromEntries(possibilities.map((p) => [p.teamId, p]));
 
   if (rankedEntries.length === 0) {
     return (
@@ -63,6 +77,7 @@ export function ThirdPlace() {
           <span style={{ width: 22 }} />
           <span style={{ flex: 1 }}>Team</span>
           <span style={{ display: 'flex', gap: 8 }}>
+            <span style={{ minWidth: 20, textAlign: 'right' }}>P</span>
             <span style={{ minWidth: 20, textAlign: 'right' }}>Pts</span>
             <span style={{ minWidth: 28, textAlign: 'right' }}>GD</span>
             <span style={{ minWidth: 20, textAlign: 'right' }}>GF</span>
@@ -93,12 +108,14 @@ export function ThirdPlace() {
                   entry={entry}
                   team={teams[entry.teamId]}
                   advancing={i < QUALIFYING_COUNT}
-                  locked={allGroupsComplete}
+                  locked={allGroupsComplete || (possibilityById[entry.teamId]?.locked ?? false)}
                 />
               </div>
             ))}
           </SortableContext>
         </DndContext>
+
+        {errorMsg && <div className="note-error">{errorMsg}</div>}
 
         {/* Legend */}
         <div className="legend">
@@ -114,4 +131,10 @@ export function ThirdPlace() {
       </div>
     </section>
   );
+}
+
+function ordinal(n: number): string {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (suffixes[(v - 20) % 10] ?? suffixes[v] ?? suffixes[0]);
 }

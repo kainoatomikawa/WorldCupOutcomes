@@ -7,16 +7,17 @@ import { computeAllStandings } from '../../domain/standings';
 import {
   buildThirdPlaceEntries,
   rankThirdPlaceEntries,
+  computeThirdPlacePossibilities,
   type ThirdPlaceEntry,
+  type ThirdPlacePossibility,
 } from '../../domain/thirdPlace';
 import { isGroupComplete } from '../../domain/elimination';
 import { useTournamentStore } from '../../store/tournamentStore';
 
 export interface ThirdPlaceData {
-  // Entries in the user's current ranking order (index 0 = best).
   rankedEntries: ThirdPlaceEntry[];
-  // True when all 12 groups have been fully played — list is locked.
   allGroupsComplete: boolean;
+  possibilities: ThirdPlacePossibility[];
 }
 
 export function useThirdPlaceData(): ThirdPlaceData {
@@ -75,6 +76,11 @@ export function useThirdPlaceData(): ThirdPlaceData {
     if (changed) rankThirdPlace(merged);
   }, [defaultEntries, thirdPlaceRanking, rankThirdPlace]);
 
+  const possibilities = useMemo(
+    () => computeThirdPlacePossibilities(defaultEntries),
+    [defaultEntries],
+  );
+
   // Build rankedEntries in the user's chosen order.
   const entryById = useMemo(
     () => Object.fromEntries(defaultEntries.map((e) => [e.teamId, e])),
@@ -86,5 +92,5 @@ export function useThirdPlaceData(): ThirdPlaceData {
     [thirdPlaceRanking, entryById],
   );
 
-  return { rankedEntries, allGroupsComplete };
+  return { rankedEntries, allGroupsComplete, possibilities };
 }
