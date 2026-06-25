@@ -51,8 +51,6 @@ export function ThirdPlace() {
     rankThirdPlace(newOrder);
   }
 
-  const possibilityById = Object.fromEntries(possibilities.map((p) => [p.teamId, p]));
-
   if (rankedEntries.length === 0) {
     return (
       <section>
@@ -108,7 +106,7 @@ export function ThirdPlace() {
                   entry={entry}
                   team={teams[entry.teamId]}
                   advancing={i < QUALIFYING_COUNT}
-                  locked={allGroupsComplete || (possibilityById[entry.teamId]?.locked ?? false)}
+                  locked={allGroupsComplete}
                 />
               </div>
             ))}
